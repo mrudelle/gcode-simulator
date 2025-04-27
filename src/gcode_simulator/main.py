@@ -9,8 +9,8 @@ if __name__ == '__main__':
     settings = GrblSettings(
         max_rate_x=3000,      # mm/min
         max_rate_y=3000,      # mm/min
-        max_accel_x=200,   # mm/s^2
-        max_accel_y=200,    # mm/s^2
+        max_accel_x=800,   # mm/s^2
+        max_accel_y=800,    # mm/s^2
         junction_deviation=0.01,  # mm
     )
     

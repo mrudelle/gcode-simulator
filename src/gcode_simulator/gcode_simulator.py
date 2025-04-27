@@ -1,8 +1,6 @@
 from dataclasses import dataclass
-import datetime
 import re
 import math
-import sys
 
 @dataclass
 class GrblSettings:
