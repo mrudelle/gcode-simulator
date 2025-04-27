@@ -21,7 +21,7 @@ if __name__ == '__main__':
     time, bounds = simulator.estimate_time(test_gcode)
 
     print(f"Estimated execution time: {datetime.timedelta(seconds=round(time))}")
-    print(f"Bounds:")
+    print("Bounds:")
     print(f"  X: {bounds.min_x:.1f} to {bounds.max_x:.1f} (width: {bounds.width:.1f}mm)")
     print(f"  Y: {bounds.min_y:.1f} to {bounds.max_y:.1f} (height: {bounds.height:.1f}mm)")
 

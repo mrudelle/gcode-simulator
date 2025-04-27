@@ -3,7 +3,6 @@ import click
 import datetime
 import json
 import sys
-from pathlib import Path
 
 from .gcode_simulator import GCodeSimulator, GrblSettings
 from .viz import plot_trace
@@ -74,7 +73,7 @@ def main(gcode_file, max_rate_x, max_rate_y, max_accel_x, max_accel_y,
         click.echo(json.dumps(result, indent=2))
     else:
         click.echo(f"Estimated execution time: {time_formatted}")
-        click.echo(f"Bounds:")
+        click.echo("Bounds:")
         click.echo(f"  X: {bounds.min_x:.2f} to {bounds.max_x:.2f} (width: {bounds.width:.2f}mm)")
         click.echo(f"  Y: {bounds.min_y:.2f} to {bounds.max_y:.2f} (height: {bounds.height:.2f}mm)")
     

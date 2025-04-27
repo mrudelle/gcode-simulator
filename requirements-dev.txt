@@ -1,0 +1,5 @@
+-r requirements.txt
+
+ruff>=0.11.0
+twine>=6.1.0
+build>=1.2.0
