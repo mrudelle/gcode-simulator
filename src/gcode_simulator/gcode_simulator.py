@@ -2,6 +2,7 @@ from dataclasses import dataclass
 import re
 import math
 
+
 @dataclass
 class GrblSettings:
     max_rate_x: float = 3000.0  # mm/min ($110)
@@ -11,6 +12,7 @@ class GrblSettings:
     junction_deviation: float = 0.01  # mm ($11)
     grbl_version: str = '0.9i'  # Version of GRBL used
 
+
 @dataclass
 class Point:
     x: float = 0.0
@@ -18,27 +20,28 @@ class Point:
 
     def __sub__(self, other: 'Point') -> 'Point':
         return Point(self.x - other.x, self.y - other.y)
-    
+
     def __add__(self, other: 'Point') -> 'Point':
         return Point(self.x + other.x, self.y + other.y)
-    
+
     def length(self) -> float:
         return math.sqrt(self.x**2 + self.y**2)
-    
+
     def normalize(self) -> 'Point':
         length = self.length()
         if length == 0:
             return Point(0, 0)
         return Point(self.x / length, self.y / length)
-    
+
     def dot_product(self, other: 'Point') -> float:
         return self.x * other.x + self.y * other.y
-    
+
     def abs(self) -> 'Point':
         return Point(abs(self.x), abs(self.y))
-    
+
     def scale(self, factor: float) -> 'Point':
         return Point(self.x * factor, self.y * factor)
+
 
 @dataclass
 class Bounds:
@@ -61,6 +64,7 @@ class Bounds:
     def height(self) -> float:
         return self.max_y - self.min_y
 
+
 @dataclass
 class TraceNode:
     x: float
@@ -68,16 +72,25 @@ class TraceNode:
     feed: float
     time: float
 
+
 def is_motion_command(line: str) -> bool:
-    return line.startswith('G0 ') or line.startswith('G1 ') or line.startswith('G00 ') or line.startswith('G01 ')
+    return (
+        line.startswith('G0 ')
+        or line.startswith('G1 ')
+        or line.startswith('G00 ')
+        or line.startswith('G01 ')
+    )
+
 
 def is_rapid_motion_command(line: str) -> bool:
     return line.startswith('G0 ') or line.startswith('G00 ')
+
 
 def is_go_home_command(line: str) -> bool:
     command = line.split(' ')
     command.sort()
     return command == ['G0', 'X0', 'Y0'] or command == ['G00', 'X0', 'Y0']
+
 
 class GCodeSimulator:
     def __init__(self, settings: GrblSettings, trace: bool = False):
@@ -92,55 +105,57 @@ class GCodeSimulator:
         self.trace_location = Point()
         self.trace_time = 0.0
         self.trace_nodes = [TraceNode(0, 0, 0, 0)]
-        
-    def _parse_coord(self, line: str, current_pos: Point, previous_feed) -> tuple[Point, float]:
+
+    def _parse_coord(
+        self, line: str, current_pos: Point, previous_feed
+    ) -> tuple[Point, float]:
         new_pos = Point(current_pos.x, current_pos.y)
         feed = previous_feed
-        
+
         x_match = re.search(r'X([-\d.]+)', line)
         y_match = re.search(r'Y([-\d.]+)', line)
 
-
         f_match = re.search(r'F([-\d.]+)', line)
-        
-        if x_match: 
-          new_pos.x = float(x_match.group(1))
-        if y_match: 
-          new_pos.y = float(y_match.group(1))
-        if f_match: 
-          feed = float(f_match.group(1))
-            
+
+        if x_match:
+            new_pos.x = float(x_match.group(1))
+        if y_match:
+            new_pos.y = float(y_match.group(1))
+        if f_match:
+            feed = float(f_match.group(1))
+
         return new_pos, feed
 
     def _parse_dwell(self, line: str) -> float:
         p_match = re.search(r'P([-\d.]+)', line)
         s_match = re.search(r'S([-\d.]+)', line)
-        
-        if p_match:  
+
+        if p_match:
             # in grbl 9.9, P is in seconds
             if self.settings.grbl_version.startswith('0.9'):
                 return float(p_match.group(1))
 
             # P is in milliseconds
             return float(p_match.group(1)) / 1000
-        
+
         elif s_match:  # S is in seconds
             return float(s_match.group(1))
-        
+
         return 0
-    
+
     def _add_trace(self, move: Point, move_time: float, new_feed: float):
         if self.trace:
             self.trace_time += move_time
             self.trace_location += move
             self.trace_nodes.append(
                 TraceNode(
-                  self.trace_location.x, 
-                  self.trace_location.y, 
-                  new_feed, 
-                  self.trace_time
-                ))
-    
+                    self.trace_location.x,
+                    self.trace_location.y,
+                    new_feed,
+                    self.trace_time,
+                )
+            )
+
     def calculate_junction_vmax(self, motion1, motion2):
         """
         Calculate the maximum junction speed for a CNC machine.
@@ -164,44 +179,54 @@ class GCodeSimulator:
 
         # If the angle is very small, the head can pass the junction at max speed
         if abs(theta) < 1e-6:
-          return max(self.settings.max_rate_x, self.settings.max_rate_y)
+            return max(self.settings.max_rate_x, self.settings.max_rate_y)
 
         junction_radius = self.settings.junction_deviation / math.sin(theta / 2)
 
-        max_centripetal_acceleration = min(self.settings.max_accel_x, self.settings.max_accel_y)
+        max_centripetal_acceleration = min(
+            self.settings.max_accel_x, self.settings.max_accel_y
+        )
 
         vmax_mm_s = math.sqrt(max_centripetal_acceleration * junction_radius)
 
         return vmax_mm_s * 60.0
-    
+
     def max_speed_along_motion(self, motion: Point) -> float:
-        """ Calculate the maximum feed rate reachable along motion vector """
+        """Calculate the maximum feed rate reachable along motion vector"""
         abs_motion_dir = motion.normalize().abs()
 
         return Point(
-            self.settings.max_rate_x * abs_motion_dir.x / max(abs_motion_dir.x, abs_motion_dir.y),
-            self.settings.max_rate_y * abs_motion_dir.y / max(abs_motion_dir.x, abs_motion_dir.y)
+            self.settings.max_rate_x
+            * abs_motion_dir.x
+            / max(abs_motion_dir.x, abs_motion_dir.y),
+            self.settings.max_rate_y
+            * abs_motion_dir.y
+            / max(abs_motion_dir.x, abs_motion_dir.y),
         ).length()
-    
+
     def max_accel_along_motion(self, motion: Point) -> float:
-        """ Calculate the maximum acceleration reachable along motion vector """
+        """Calculate the maximum acceleration reachable along motion vector"""
         abs_motion_dir = motion.normalize().abs()
 
         return Point(
-            self.settings.max_accel_x * abs_motion_dir.x / max(abs_motion_dir.x, abs_motion_dir.y),
-            self.settings.max_accel_y * abs_motion_dir.y / max(abs_motion_dir.x, abs_motion_dir.y)
+            self.settings.max_accel_x
+            * abs_motion_dir.x
+            / max(abs_motion_dir.x, abs_motion_dir.y),
+            self.settings.max_accel_y
+            * abs_motion_dir.y
+            / max(abs_motion_dir.x, abs_motion_dir.y),
         ).length()
-    
+
     def _calculate_motion_time(
-            self, 
-            motion: Point, 
-            start_velocity: float, 
-            end_velocity: float, 
-            max_velocity: float, 
-            max_accel: float
-        ) -> tuple[float, float]:
+        self,
+        motion: Point,
+        start_velocity: float,
+        end_velocity: float,
+        max_velocity: float,
+        max_accel: float,
+    ) -> tuple[float, float]:
         """
-        Calculate the minimum time required for a motion while respecting 
+        Calculate the minimum time required for a motion while respecting
         max acceleration and max speed.
 
         It may happen that the end velocity cannot be reached so the real end_velocity is returned.
@@ -238,18 +263,23 @@ class GCodeSimulator:
             cruise_time = cruise_distance / max_velocity
             total_time = accel_time + cruise_time + decel_time
 
-            self._add_trace(motion_dir.scale(accel_distance), accel_time, max_velocity*60.0)
-            self._add_trace(motion_dir.scale(cruise_distance), cruise_time, max_velocity*60.0)
-            self._add_trace(motion_dir.scale(decel_distance), decel_time, end_velocity*60.0)
+            self._add_trace(
+                motion_dir.scale(accel_distance), accel_time, max_velocity * 60.0
+            )
+            self._add_trace(
+                motion_dir.scale(cruise_distance), cruise_time, max_velocity * 60.0
+            )
+            self._add_trace(
+                motion_dir.scale(decel_distance), decel_time, end_velocity * 60.0
+            )
 
             return total_time, end_velocity * 60.0  # Convert back to mm/min
 
         # Case 2: Cannot reach max velocity
         # Solve for the peak velocity achievable within the distance
         peak_velocity_squared = (
-            (start_velocity**2 + end_velocity**2) / 2 +
-            max_accel * distance
-        )
+            start_velocity**2 + end_velocity**2
+        ) / 2 + max_accel * distance
         if peak_velocity_squared < 0:
             peak_velocity = 0
         else:
@@ -262,14 +292,20 @@ class GCodeSimulator:
         accel_distance = (peak_velocity**2 - start_velocity**2) / (2 * max_accel)
         decel_distance = (peak_velocity**2 - end_velocity**2) / (2 * max_accel)
 
-        if abs(accel_distance + decel_distance - distance) < 1e-6: # account for floating point errors
+        if (
+            abs(accel_distance + decel_distance - distance) < 1e-6
+        ):  # account for floating point errors
             # Accelerate to peak velocity, then decelerate
             accel_time = (peak_velocity - start_velocity) / max_accel
             decel_time = (peak_velocity - end_velocity) / max_accel
             total_time = accel_time + decel_time
 
-            self._add_trace(motion_dir.scale(accel_distance), accel_time, peak_velocity*60.0)
-            self._add_trace(motion_dir.scale(decel_distance), decel_time, end_velocity*60.0)
+            self._add_trace(
+                motion_dir.scale(accel_distance), accel_time, peak_velocity * 60.0
+            )
+            self._add_trace(
+                motion_dir.scale(decel_distance), decel_time, end_velocity * 60.0
+            )
 
             return total_time, end_velocity * 60.0  # Convert back to mm/min
 
@@ -282,7 +318,7 @@ class GCodeSimulator:
             achievable_end_velocity = math.sqrt(max(0, achievable_end_velocity_squared))
             decel_time = (start_velocity - achievable_end_velocity) / max_accel
 
-            self._add_trace(motion, decel_time, achievable_end_velocity*60.0)
+            self._add_trace(motion, decel_time, achievable_end_velocity * 60.0)
 
             return decel_time, achievable_end_velocity * 60.0  # Convert back to mm/min
 
@@ -295,14 +331,14 @@ class GCodeSimulator:
             achievable_end_velocity = math.sqrt(max(0, achievable_end_velocity_squared))
             accel_time = (achievable_end_velocity - start_velocity) / max_accel
 
-            self._add_trace(motion, accel_time, achievable_end_velocity*60.0)
+            self._add_trace(motion, accel_time, achievable_end_velocity * 60.0)
 
             return accel_time, achievable_end_velocity * 60.0  # Convert back to mm/min
 
         # Default case (should not happen)
-        #return 0.0, start_velocity * 60.0  # No motion
-        raise ValueError("Cannot calculate motion time")
-    
+        # return 0.0, start_velocity * 60.0  # No motion
+        raise ValueError('Cannot calculate motion time')
+
     def estimate_time(self, gcode: str) -> tuple[float, Bounds]:
         velocity = 0.0
         last_feed = min(self.settings.max_rate_x, self.settings.max_rate_y)
@@ -324,9 +360,13 @@ class GCodeSimulator:
             if is_motion_command(line):
                 target_pos, target_feed = self._parse_coord(line, position, last_feed)
                 last_feed = target_feed
-                next_pos, _ = self._parse_coord(next_line, target_pos, velocity) if next_line and is_motion_command(next_line) else (target_pos, None)
+                next_pos, _ = (
+                    self._parse_coord(next_line, target_pos, velocity)
+                    if next_line and is_motion_command(next_line)
+                    else (target_pos, None)
+                )
 
-                # calculate the bounds of the drawing, but ignore the last G0 X0 Y0 (return to home) 
+                # calculate the bounds of the drawing, but ignore the last G0 X0 Y0 (return to home)
                 if i != len(lines) - 1 or not is_go_home_command(line):
                     bounds.update(target_pos)
 
@@ -350,12 +390,18 @@ class GCodeSimulator:
                 # realistic target end velocity
                 end_velocity = min(target_feed, junction_vmax)
 
-                motion_time, real_end_velocity = self._calculate_motion_time(motion, velocity, end_velocity, target_feed, max_target_accel)
+                motion_time, real_end_velocity = self._calculate_motion_time(
+                    motion, velocity, end_velocity, target_feed, max_target_accel
+                )
 
-                if (real_end_velocity - end_velocity > 1e-6):
-                    print(f"Warning: Could not reach target feed rate at line {i + 1} ({real_end_velocity:.2f} < {end_velocity:.2f})")
-                elif (real_end_velocity - end_velocity < -1e-6):
-                    print(f"Warning: Exceeded target feed rate at line {i + 1} ({real_end_velocity:.2f} > {end_velocity:.2f})")
+                if real_end_velocity - end_velocity > 1e-6:
+                    print(
+                        f'Warning: Could not reach target feed rate at line {i + 1} ({real_end_velocity:.2f} < {end_velocity:.2f})'
+                    )
+                elif real_end_velocity - end_velocity < -1e-6:
+                    print(
+                        f'Warning: Exceeded target feed rate at line {i + 1} ({real_end_velocity:.2f} > {end_velocity:.2f})'
+                    )
                     real_end_velocity = end_velocity
 
                 velocity = real_end_velocity
@@ -367,6 +413,6 @@ class GCodeSimulator:
                 total_time += dwell_time
 
             elif line.startswith('M3'):
-                pass # pen down and up are followed or preceded by dwell commands
+                pass  # pen down and up are followed or preceded by dwell commands
 
         return total_time, bounds
