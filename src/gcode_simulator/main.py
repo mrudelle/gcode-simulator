@@ -1,7 +1,7 @@
 import datetime
 import sys
-from gcode_simulator import GCodeSimulator, GrblSettings
-from viz import plot_trace
+from gcode_simulator.gcode_simulator import GCodeSimulator, GrblSettings
+from gcode_simulator.viz import plot_trace
 
 
 if __name__ == '__main__':

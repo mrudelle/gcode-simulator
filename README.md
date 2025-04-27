@@ -96,3 +96,7 @@ plot_trace(simulator.trace_nodes, bounds)
 ```
 
 The visualization shows the G-code path with color-coded feed rates and a grid for scale. Each line segment is colored according to its feed rate, with a color bar indicating the feed rate values.
+
+![Feed Rate Visualization](doc/imgs/feed_rate_viz.png)
+
+![Feed Rate Visualization Closeup](doc/imgs/feed_rate_viz_closeup.png)
