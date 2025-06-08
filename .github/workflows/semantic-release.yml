@@ -37,9 +37,6 @@ jobs:
           pip install tomlkit
           npm install -g semantic-release @semantic-release/git @semantic-release/github @semantic-release/exec
 
-      - name: Make update_version.py executable
-        run: chmod +x scripts/update_version.py
-
       - name: Run semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
