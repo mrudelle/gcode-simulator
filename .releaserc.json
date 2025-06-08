@@ -1,0 +1,17 @@
+{
+  "branches": ["main"],
+  "plugins": [
+    "@semantic-release/commit-analyzer",
+    "@semantic-release/release-notes-generator",
+    ["@semantic-release/exec", {
+      "prepareCmd": "python scripts/update_version.py ${nextRelease.version}"
+    }],
+    ["@semantic-release/git", {
+      "assets": ["pyproject.toml", "src/gcode_simulator/__init__.py"],
+      "message": "chore(release): Bump version ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
+    }],
+    ["@semantic-release/github", {
+      "draft": true
+    }]
+  ]
+}
