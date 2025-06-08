@@ -4,24 +4,13 @@ Python package for analyzing and simulating gcode tool-path for plotters, CNC, 3
 
 ## Features
 
-- Accurate time estimation considering acceleration limits
-- Junction deviation modeling for realistic speed transitions
-- Visualization of tool paths with color-coded feed rates
-- Support for different GRBL firmware versions
-- JSON output option for integration with other tools
+- Accurate time estimation with junction deviation modeling
+- Visualization of tool paths with feed rates
 
 ## Installation
 
 ```bash
 pip install gcode-simulator
-
-## Features
-
-- Accurate time estimation considering acceleration limits
-- Junction deviation modeling for realistic speed transitions
-- Visualization of tool paths with color-coded feed rates
-- Support for different GRBL firmware versions
-- JSON output option for integration with other tools
 ```
 
 ## Usage
