@@ -1,6 +1,6 @@
 [project]
 name = "gcode-simulator"
-version = "0.0.3"
+version = "0.1.0"
 authors = [
   { name="Matthieu Rudelle", email="matthieu.rudelle@gmail.com" },
 ]
