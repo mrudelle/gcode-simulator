@@ -175,7 +175,8 @@ class GCodeSimulator:
         motion2 = motion2.normalize()
 
         # angle of the junction
-        theta = math.acos(motion1.dot_product(motion2))
+        dot_product = max(-1.0, min(1.0, motion1.dot_product(motion2)))  # Clamped to avoid floating point errors
+        theta = math.acos(dot_product)
 
         # If the angle is very small, the head can pass the junction at max speed
         if abs(theta) < 1e-6:
