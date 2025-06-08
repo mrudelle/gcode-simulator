@@ -40,4 +40,8 @@ jobs:
       - name: Run semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GIT_AUTHOR_NAME: mrudelle
+          GIT_AUTHOR_EMAIL: matthieu.rudelle@gmail.com
+          GIT_COMMITTER_NAME: mrudelle
+          GIT_COMMITTER_EMAIL: matthieu.rudelle@gmail.com
         run: npx semantic-release

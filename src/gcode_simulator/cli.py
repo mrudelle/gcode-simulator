@@ -8,7 +8,7 @@ from .gcode_simulator import GCodeSimulator, GrblSettings
 from .viz import plot_trace
 
 
-@click.command()
+@click.command(context_settings={'show_default': True})
 @click.argument(
     'gcode_file', type=click.Path(exists=True, file_okay=True, readable=True)
 )

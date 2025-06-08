@@ -9,9 +9,6 @@
     ["@semantic-release/git", {
       "assets": ["pyproject.toml", "src/gcode_simulator/__init__.py"],
       "message": "chore(release): Bump version ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
-    }],
-    ["@semantic-release/github", {
-      "draft": true
     }]
   ]
 }
