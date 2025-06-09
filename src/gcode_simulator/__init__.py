@@ -5,7 +5,7 @@ This package provides tools for simulating and visualizing GCode execution,
 taking into account machine acceleration and other parameters.
 """
 
-__version__ = "0.2.0"
+__version__ = "0.2.1"
 
 from .gcode_simulator import GCodeSimulator, GrblSettings
 from .viz import plot_trace
