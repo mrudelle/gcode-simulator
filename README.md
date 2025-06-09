@@ -2,10 +2,11 @@
 
 Python package for analyzing and simulating gcode tool-path for plotters, CNC, 3D printers and more.
 
-## Features
-
 - Accurate time estimation with junction deviation modeling
 - Visualization of tool paths with feed rates
+
+Sample output, the plot on the left and the toolpath on the right. (The y axis is inverted on my machine)
+![Feed Rate Visualization Closeup](doc/imgs/feed_rate_viz_closeup.png)
 
 ## Installation
 
